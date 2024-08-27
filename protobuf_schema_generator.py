@@ -6,6 +6,8 @@ if len(sys.argv) < 2:
   print("STUPID ADD THE HEX INPUT FOLDER >:(")
   quit(1)
 
+PROTO_VERSION = 2
+
 type_mapping = {
   1: "double", # latitude
   3: "uint32", # shareExpiration (maybe timestamp)
@@ -17,7 +19,7 @@ type_mapping = {
   12: "string", # string until proven innocent (meetingKey)
   13: "uint16", # tcpPort
   14: "enum",
-  17: "date", # does this exist?
+  17: "uint32", # some date thing
 }
 
 class Field:
@@ -116,7 +118,15 @@ class Message:
     out += f"{ind*indentation_count}{"enum" if self.is_enum else "message"} {self.name}\n"
     out += ind*indentation_count + "{\n"
     for field in self.fields:
-      out += f"{ind*(indentation_count+1)}{field._type} {field.name} = {field._id};\n"
+      out += f"{ind*(indentation_count+1)}{"repeated" if PROTO_VERSION == 2 and not self.is_enum else ""} {field._type} {field.name} = {field._id}"
+      if field.default != "" and PROTO_VERSION == 2:
+        if field._type == "string":
+          out += f' [default = "{field.default}"]'
+        elif not field._type in list(type_mapping.values()):
+          out += f' [default = {field._type}.{field.default}]'
+        else:
+          out += f' [default = {field.default}]'
+      out += ";\n"
     for sub_type in self.sub_types:
       out += sub_type.to_str(indentation_count=indentation_count+1) + "\n"
     out += ind*indentation_count + "}"
@@ -149,7 +159,7 @@ class File:
         self.package = field_data["results"][0]["data"]
   
   def to_str(self):
-    output = 'syntax = "proto3";\n'
+    output = f'syntax = "proto{PROTO_VERSION}";\n'
     if self.package != "":
       output += f'package {self.package};\n'
     for imp in self.imports:
