@@ -10,20 +10,25 @@ PROTO_VERSION = 2
 
 type_mapping = {
   1: "double", # latitude
-  3: "uint32", # shareExpiration (maybe timestamp)
+  3: "sint32", # shareExpiration (maybe timestamp)
   4: "uint32",
   5: "string", # action probably wrong
   8: "bool",
   9: "string",
   11: "__CUSTOM_TYPE_BROKEN",
   12: "string", # string until proven innocent (meetingKey)
-  13: "uint16", # tcpPort
+  13: "uint32", # tcpPort
   14: "enum",
   17: "uint32", # some date thing
 }
 
 class Field:
-  def __init__(self, data):
+  def __init__(self, data, is_enum=False):
+    if PROTO_VERSION == 3 or is_enum:
+      self.label = ""
+    else:
+      self.label = "repeated"
+    self.is_enum = is_enum
     self._type_num = -99
     self._type = ""
     self.name = ""
@@ -62,11 +67,12 @@ class Field:
         self._type = type_mapping[val]
         pass
       elif opr == 6: # custom message type
-        tmp = val.split(".")
-        self._type = tmp[-1]
+        self._type = val.strip(".")
         pass
       elif opr == 7: # unknown doesn't exist
         self.default = val
+        if PROTO_VERSION == 2:
+          self.label = "optional"
         pass
       # elif opr == 8: # unknown doesn't exist
         # pass
@@ -94,7 +100,7 @@ class Message:
         self.name = message_name
       elif field_num == 2: # Field for Message
         field_data = field["data"]["results"]
-        field = Field(field_data)
+        field = Field(field_data, is_enum=self.is_enum)
         self.fields.append(field)
       elif field_num == 3: # Sub message
         field_data = field["data"]["results"]
@@ -118,12 +124,13 @@ class Message:
     out += f"{ind*indentation_count}{"enum" if self.is_enum else "message"} {self.name}\n"
     out += ind*indentation_count + "{\n"
     for field in self.fields:
-      out += f"{ind*(indentation_count+1)}{"repeated" if PROTO_VERSION == 2 and not self.is_enum else ""} {field._type} {field.name} = {field._id}"
+      out += f"{ind*(indentation_count+1)}{field.label} {field._type} {field.name} = {field._id}"
       if field.default != "" and PROTO_VERSION == 2:
         if field._type == "string":
           out += f' [default = "{field.default}"]'
         elif not field._type in list(type_mapping.values()):
-          out += f' [default = {field._type}.{field.default}]'
+          # out += f' [default = {field._type}.{field.default}]'
+          out += f' [default = {field.default}]'
         else:
           out += f' [default = {field.default}]'
       out += ";\n"
