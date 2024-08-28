@@ -55,8 +55,8 @@ class Field:
           continue
         self._id = val
         pass
-      elif opr == 4: # unknown exists
-        if val == 1:
+      elif opr == 4: # label v2
+        if val == 1 and PROTO_VERSION == 2:
           self.label = "optional"
         pass
       elif opr == 5: # type (own mappings)
