@@ -56,6 +56,8 @@ class Field:
         self._id = val
         pass
       elif opr == 4: # unknown exists
+        if val == 1:
+          self.label = "optional"
         pass
       elif opr == 5: # type (own mappings)
         if val not in type_mapping:
