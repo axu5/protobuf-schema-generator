@@ -10,8 +10,9 @@ PROTO_VERSION = 2
 
 type_mapping = {
   1: "double", # latitude
+  # 2: "bytes", # ?
   3: "sint32", # shareExpiration (maybe timestamp)
-  4: "uint32",
+  4: "uint64",
   5: "string", # action probably wrong
   8: "bool",
   9: "string",
@@ -84,7 +85,6 @@ class Field:
       else:
         print("UNKNOWN FIELD NUM", opr, val)
 
-all_messages = []
 class Message:
   def __init__(self, data, is_enum=False):
     self.name = ""
@@ -116,14 +116,13 @@ class Message:
         pass
       else:
         print("UNKNOWN MESSAGE FIELD", field)
-        # pass
 
   def to_str(self,indentation_count=0):
     ind = "  "
     out = ""
     if indentation_count > 0:
       out += "\n\n"
-    out += f"{ind*indentation_count}{"enum" if self.is_enum else "message"} {self.name}\n"
+    out += f"{ind*indentation_count}{'enum' if self.is_enum else 'message'} {self.name}\n"
     out += ind*indentation_count + "{\n"
     for field in self.fields:
       out += f"{ind*(indentation_count+1)}{field.label} {field._type} {field.name} = {field._id}"
