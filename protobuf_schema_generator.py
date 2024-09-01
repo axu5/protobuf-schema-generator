@@ -11,7 +11,7 @@ PROTO_VERSION = 2
 type_mapping = {
   1: "double", # latitude
   # 2: "bytes", # ?
-  3: "sint32", # shareExpiration (maybe timestamp)
+  3: "sint64", # shareExpiration (maybe timestamp)
   4: "uint64",
   5: "string", # action probably wrong
   8: "bool",
